@@ -15,6 +15,8 @@ const copyExtensionAssets = () => ({
     const manifestDest = path.resolve(dist, "manifest.json");
     const drumsSource = path.resolve(root, "src/assets/drums");
     const drumsDest = path.resolve(dist, "assets/drums");
+    const iconsSource = path.resolve(root, "icons");
+    const iconsDest = path.resolve(dist, "icons");
 
     if (fs.existsSync(manifestSource)) {
       fs.copyFileSync(manifestSource, manifestDest);
@@ -23,6 +25,10 @@ const copyExtensionAssets = () => ({
     if (fs.existsSync(drumsSource)) {
       fs.mkdirSync(path.dirname(drumsDest), { recursive: true });
       fs.cpSync(drumsSource, drumsDest, { recursive: true });
+    }
+
+    if (fs.existsSync(iconsSource)) {
+      fs.cpSync(iconsSource, iconsDest, { recursive: true });
     }
   }
 });

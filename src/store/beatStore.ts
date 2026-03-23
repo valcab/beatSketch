@@ -43,7 +43,7 @@ const createTrack = (steps: StepCount): DrumTrack[] =>
     velocity: Array.from({ length: steps }, () => 0.6),
     mute: false,
     solo: false,
-    volume: 0.82,
+    volume: 1,
     reverb: track.reverbAvailable ? 20 : 0
   }));
 
@@ -130,14 +130,14 @@ export const useBeatStore = create<BeatStore>((set) => ({
   steps: 16,
   isPlaying: false,
   currentStep: 0,
-  masterVolume: 0.82,
+  masterVolume: 1,
   kit: KITS[0],
   activePattern: initialActivePattern,
   queuedPattern: null,
   fillModeEnabled: false,
   activeFill: null,
   reverbMasterEnabled: true,
-  reverbMasterAmount: 100,
+  reverbMasterAmount: 70,
   selectedTrackId: TRACK_DEFS[0].id,
   audioReady: false,
   fallbackMode: false,

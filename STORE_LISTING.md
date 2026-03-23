@@ -103,6 +103,10 @@ BeatSketch aide les guitaristes et bassistes à créer rapidement des idées ryt
 Quand on écrit un riff, qu’on travaille un plan ou qu’on teste une idée, ouvrir un DAW complet peut casser le flux.  
 BeatSketch a été conçu comme un carnet rythmique léger : on ouvre la popup, on choisit un groove, on modifie le pattern, et on joue immédiatement.
 
+### Objectif Unique
+
+BeatSketch a un objectif unique, précis et facile à comprendre : permettre aux guitaristes et bassistes de créer rapidement un beat de batterie simple directement dans Chrome pour jouer, pratiquer ou esquisser une idée sans ouvrir un logiciel de production complet.
+
 ### Ce Que Fait L’Extension
 
 - Programmer des beats dans un séquenceur compact
