@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "BeatSketch",
+  "version": "0.1.0",
+  "description": "Boite a rythme Chrome pour guitaristes et bassistes avec Web Audio API.",
+  "permissions": ["storage", "activeTab"],
+  "action": {
+    "default_title": "BeatSketch",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "assets/drums/*", "assets/drums/**/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
