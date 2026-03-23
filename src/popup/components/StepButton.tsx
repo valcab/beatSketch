@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { cn, velocityLabel } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface StepButtonProps {
   active: boolean;
   velocity: number;
   isCurrent: boolean;
+  isTailFillCurrent: boolean;
   colorClass: string;
   isQuarter: boolean;
   onPaintStart: (nextActive: boolean) => void;
@@ -21,7 +22,7 @@ const velocityOptions = [
   { label: "ff", value: 1 }
 ];
 
-export function StepButton({ active, velocity, isCurrent, colorClass, isQuarter, onPaintStart, onPaintEnter, onVelocityChange }: StepButtonProps) {
+export function StepButton({ active, velocity, isCurrent, isTailFillCurrent, colorClass, isQuarter, onPaintStart, onPaintEnter, onVelocityChange }: StepButtonProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -44,16 +45,19 @@ export function StepButton({ active, velocity, isCurrent, colorClass, isQuarter,
           isQuarter && "border-violet-300 bg-violet-200/80",
           active && `${colorClass} text-white`,
           active && velocity >= 0.8 && "brightness-125 saturate-150",
-          isCurrent && "ring-2 ring-violet-500/70 ring-offset-1 ring-offset-white"
+          isCurrent && "ring-2 ring-violet-500/70 ring-offset-1 ring-offset-white",
+          isTailFillCurrent && "ring-amber-400/80"
         )}
         title={active ? `Velocity ${velocityLabel(velocity)}` : "Step off"}
       >
         {active ? <span className="sr-only">{velocityLabel(velocity)}</span> : null}
+        {isTailFillCurrent ? <span className="absolute right-[1px] top-[1px] h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_0_1px_rgba(255,255,255,0.9)]" /> : null}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Velocity</DialogTitle>
+            <DialogDescription>Choose the playback intensity for this active step.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-4 gap-2">
             {velocityOptions.map((option) => (

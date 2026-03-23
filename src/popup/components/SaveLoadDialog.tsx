@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { listSavedBeats, removeSavedBeat } from "@/popup/lib/storage";
@@ -28,6 +28,7 @@ export function SaveLoadDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Saved Beats</DialogTitle>
+          <DialogDescription>Browse, search, load, or delete beats saved locally in your browser.</DialogDescription>
         </DialogHeader>
         <div className="mb-3 flex items-center gap-2 rounded-md border border-violet-200 bg-violet-50 px-3">
           <Search className="h-4 w-4 text-violet-400" />

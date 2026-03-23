@@ -7,6 +7,7 @@ export function Sequencer() {
     tracks,
     currentStep,
     steps,
+    activeFill,
     selectedTrackId,
     setSteps,
     setSelectedTrackId,
@@ -52,6 +53,7 @@ export function Sequencer() {
           track={track}
           currentStep={currentStep}
           steps={steps}
+          tailFillActive={Boolean(activeFill)}
           selected={track.id === selectedTrackId}
           onSelect={() => setSelectedTrackId(track.id)}
           onSetStepActive={(index, active) => setStepActive(track.id, index, active)}

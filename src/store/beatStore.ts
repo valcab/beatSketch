@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import type { BeatState, DrumKit, DrumTrack, Pattern, PatternSlot, ReverbType, SavedBeat, StepCount } from "@/types/beat.types";
-import { clonePattern } from "@/presets/rockPresets";
-import { ROCK_PRESETS } from "@/presets/rockPresets";
+import type { BeatState, DrumKit, DrumTrack, FillTransition, Pattern, PatternFill, PatternSlot, ReverbType, SavedBeat, StepCount } from "@/types/beat.types";
+import { clonePattern, ROCK_PRESETS } from "@/presets/rockPresets";
 
 const TRACK_DEFS = [
   { id: "track-kick", key: "kick", name: "Kick", color: "bg-orange-500", reverbAvailable: false, reverbType: "none" as ReverbType },
@@ -30,6 +29,13 @@ export const KITS: DrumKit[] = ["rock", "jazz", "acoustic", "electronic"].map((k
   }
 }));
 
+const cloneTracks = (tracks: DrumTrack[]) =>
+  tracks.map((track) => ({
+    ...track,
+    steps: [...track.steps],
+    velocity: [...track.velocity]
+  }));
+
 const createTrack = (steps: StepCount): DrumTrack[] =>
   TRACK_DEFS.map((track) => ({
     ...track,
@@ -44,6 +50,7 @@ const createTrack = (steps: StepCount): DrumTrack[] =>
 const createPattern = (slot: PatternSlot, steps: StepCount): Pattern => ({
   id: slot,
   name: `Pattern ${slot}`,
+  presetName: undefined,
   tracks: createTrack(steps)
 });
 
@@ -52,6 +59,7 @@ const createSeededPattern = (slot: PatternSlot, presetIndex = 0): Pattern => {
   const base = createPattern(slot, preset.steps);
   return {
     ...base,
+    presetName: preset.name,
     tracks: preset.apply(base.tracks)
   };
 };
@@ -77,9 +85,9 @@ interface BeatStore extends BeatState {
   setTrackReverb: (trackId: string, value: number) => void;
   setTrackReverbType: (trackId: string, reverbType: ReverbType) => void;
   setActivePattern: (pattern: PatternSlot) => void;
+  setFillModeEnabled: (enabled: boolean) => void;
   queuePatternChange: (pattern: PatternSlot | null) => void;
-  commitQueuedPatternChange: () => void;
-  copyPattern: (from: PatternSlot, to: PatternSlot) => void;
+  resolvePatternBoundary: () => void;
   applyPresetToPattern: (pattern: PatternSlot, presetName: string) => void;
   setReverbMasterEnabled: (value: boolean) => void;
   setReverbMasterAmount: (value: number) => void;
@@ -97,13 +105,25 @@ const syncPatternTracks = (patterns: Pattern[], activePattern: PatternSlot) => {
 };
 
 const updatePatterns = (patterns: Pattern[], activePattern: PatternSlot, tracks: DrumTrack[]) =>
-  patterns.map((pattern) => (pattern.id === activePattern ? { ...pattern, tracks: tracks.map((track) => ({ ...track, steps: [...track.steps], velocity: [...track.velocity] })) } : pattern));
+  patterns.map((pattern) => (pattern.id === activePattern ? { ...pattern, tracks: cloneTracks(tracks) } : pattern));
+
+const pickFill = (pattern: Pattern): PatternFill | null => {
+  const preset = ROCK_PRESETS.find((item) => item.name === pattern.presetName);
+  if (!preset || preset.fills.length === 0) return null;
+
+  const definition = preset.fills.length === 1 ? preset.fills[0] : preset.fills[Math.floor(Math.random() * preset.fills.length)];
+  return {
+    name: definition.name,
+    repeats: definition.repeats,
+    tracks: definition.apply(pattern.tracks)
+  };
+};
 
 const initialPatterns = [createSeededPattern("A", 0), createSeededPattern("B", 1)];
 const initialActivePattern: PatternSlot = "A";
 const initial = syncPatternTracks(initialPatterns, initialActivePattern);
 
-export const useBeatStore = create<BeatStore>((set, get) => ({
+export const useBeatStore = create<BeatStore>((set) => ({
   beatName: "New Beat",
   bpm: 110,
   swing: 0,
@@ -114,6 +134,8 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
   kit: KITS[0],
   activePattern: initialActivePattern,
   queuedPattern: null,
+  fillModeEnabled: false,
+  activeFill: null,
   reverbMasterEnabled: true,
   reverbMasterAmount: 100,
   selectedTrackId: TRACK_DEFS[0].id,
@@ -133,7 +155,7 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
           velocity: Array.from({ length: steps }, (_, index) => track.velocity[index] ?? 0.6)
         }))
       }));
-      return { steps, currentStep: 0, ...syncPatternTracks(patterns, state.activePattern) };
+      return { steps, currentStep: 0, activeFill: null, queuedPattern: null, ...syncPatternTracks(patterns, state.activePattern) };
     }),
   setCurrentStep: (currentStep) => set({ currentStep }),
   setPlaying: (isPlaying) => set({ isPlaying }),
@@ -216,26 +238,77 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
     set((state) => ({
       activePattern,
       queuedPattern: null,
+      activeFill: null,
       currentStep: 0,
       ...syncPatternTracks(state.patterns, activePattern)
     })),
-  queuePatternChange: (queuedPattern) => set({ queuedPattern }),
-  commitQueuedPatternChange: () =>
+  setFillModeEnabled: (fillModeEnabled) => set({ fillModeEnabled }),
+  queuePatternChange: (queuedPattern) =>
     set((state) => {
+      if (!queuedPattern) {
+        return {
+          queuedPattern: null,
+          activeFill: null
+        };
+      }
+
+      if (!state.fillModeEnabled) {
+        return { queuedPattern };
+      }
+
+      const sourcePattern = state.patterns.find((pattern) => pattern.id === state.activePattern);
+      const selectedFill = sourcePattern ? pickFill(sourcePattern) : null;
+
+      if (!selectedFill) {
+        return { queuedPattern };
+      }
+
+      const transition: FillTransition = {
+        sourcePattern: state.activePattern,
+        targetPattern: queuedPattern,
+        fill: selectedFill,
+        remainingRepeats: selectedFill.repeats
+      };
+
+      return {
+        queuedPattern,
+        activeFill: transition
+      };
+    }),
+  resolvePatternBoundary: () =>
+    set((state) => {
+      if (state.activeFill) {
+        if (state.activeFill.remainingRepeats > 1) {
+          const nextFill: FillTransition = {
+            ...state.activeFill,
+            remainingRepeats: 1
+          };
+
+          return {
+            activeFill: nextFill,
+            currentStep: 0
+          };
+        }
+
+        const targetPattern = state.activeFill.targetPattern;
+        return {
+          queuedPattern: null,
+          activeFill: null,
+          currentStep: 0,
+          activePattern: targetPattern,
+          ...syncPatternTracks(state.patterns, targetPattern)
+        };
+      }
+
       if (!state.queuedPattern) return state;
+
       return {
         queuedPattern: null,
+        activeFill: null,
         currentStep: 0,
         activePattern: state.queuedPattern,
         ...syncPatternTracks(state.patterns, state.queuedPattern)
       };
-    }),
-  copyPattern: (from, to) =>
-    set((state) => {
-      const fromPattern = state.patterns.find((pattern) => pattern.id === from);
-      if (!fromPattern) return state;
-      const patterns = state.patterns.map((pattern) => (pattern.id === to ? clonePattern({ ...fromPattern, id: to, name: `Pattern ${to}` }) : pattern));
-      return syncPatternTracks(patterns, state.activePattern);
     }),
   applyPresetToPattern: (slot, presetName) =>
     set((state) => {
@@ -256,6 +329,7 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
         if (pattern.id !== slot) return pattern;
         return {
           ...pattern,
+          presetName: preset.name,
           tracks: preset.apply(pattern.tracks)
         };
       });
@@ -263,6 +337,8 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
       return {
         steps: nextSteps,
         currentStep: 0,
+        activeFill: null,
+        queuedPattern: null,
         ...syncPatternTracks(patterns, state.activePattern)
       };
     }),
@@ -290,6 +366,8 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
         pattern: clonePattern(active),
         activePattern,
         queuedPattern: null,
+        fillModeEnabled: false,
+        activeFill: null,
         currentStep: 0,
         patterns,
         kit: KITS.find((kit) => kit.name === beat.kit) ?? KITS[0]

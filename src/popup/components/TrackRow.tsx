@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import { AudioWaveform, Bell, BetweenHorizontalStart, BetweenVerticalStart, Circle, CircleDot, Disc3, Music2 } from "lucide-react";
 import type { DrumTrack } from "@/types/beat.types";
-import { Button } from "@/components/ui/button";
 import { StepButton } from "./StepButton";
 
 interface TrackRowProps {
   track: DrumTrack;
   currentStep: number;
   steps: number;
+  tailFillActive: boolean;
   selected: boolean;
   onSelect: () => void;
   onSetStepActive: (index: number, active: boolean) => void;
@@ -16,21 +15,11 @@ interface TrackRowProps {
   onSolo: () => void;
 }
 
-const TRACK_ICONS = {
-  kick: Circle,
-  snare: CircleDot,
-  hihat_closed: AudioWaveform,
-  hihat_open: Music2,
-  crash: Bell,
-  ride: Disc3,
-  tom_low: BetweenHorizontalStart,
-  tom_mid: BetweenVerticalStart
-} as const;
-
 export function TrackRow({
   track,
   currentStep,
   steps,
+  tailFillActive,
   selected,
   onSelect,
   onSetStepActive,
@@ -39,7 +28,6 @@ export function TrackRow({
   onSolo
 }: TrackRowProps) {
   const [dragValue, setDragValue] = useState<boolean | null>(null);
-  const Icon = TRACK_ICONS[track.key as keyof typeof TRACK_ICONS] ?? Circle;
 
   useEffect(() => {
     if (dragValue === null) return;
@@ -55,10 +43,7 @@ export function TrackRow({
     >
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-violet-900" title={track.name}>
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="sr-only">{track.name}</span>
-          </div>
+          <div className="truncate text-[11px] font-medium text-violet-900" title={track.name}>{track.name}</div>
           <div className={`mt-1 h-2.5 w-2.5 rounded-full ${track.color}`} />
         </div>
         <div className="flex overflow-hidden rounded-md border border-violet-200 bg-white">
@@ -93,6 +78,7 @@ export function TrackRow({
             active={active}
             velocity={track.velocity[index] ?? 0.6}
             isCurrent={currentStep === index}
+            isTailFillCurrent={tailFillActive && currentStep === index}
             colorClass={track.color}
             isQuarter={index % Math.max(1, steps / 4) === 0}
             onPaintStart={(nextActive) => {

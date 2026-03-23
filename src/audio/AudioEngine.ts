@@ -96,8 +96,8 @@ export class AudioEngine {
     const secondsPerBeat = 60 / state.bpm;
     const stepDuration = secondsPerBeat / 4;
     const nextStep = (this.stepIndex + 1) % state.steps;
-    if (nextStep === 0 && state.queuedPattern) {
-      useBeatStore.getState().commitQueuedPatternChange();
+    if (nextStep === 0 && (state.queuedPattern || state.activeFill)) {
+      useBeatStore.getState().resolvePatternBoundary();
       const refreshed = useBeatStore.getState();
       this.stepIndex = 0;
       this.nextNoteTime += stepDuration;
@@ -111,8 +111,9 @@ export class AudioEngine {
 
   private scheduleStep(step: number, time: number) {
     const state = useBeatStore.getState();
-    const soloTracks = state.tracks.filter((track) => track.solo);
-    const activeTracks = state.tracks.filter((track) => {
+    const playbackTracks = state.activeFill ? state.activeFill.fill.tracks : state.tracks;
+    const soloTracks = playbackTracks.filter((track) => track.solo);
+    const activeTracks = playbackTracks.filter((track) => {
       if (soloTracks.length > 0) return track.solo;
       return !track.mute;
     });

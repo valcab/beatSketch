@@ -4,7 +4,7 @@ import { useBeatStore } from "@/store/beatStore";
 import { audioEngine } from "@/audio/AudioEngine";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { saveCurrentBeat } from "./lib/storage";
 import { PatternAB } from "./components/PatternAB";
@@ -105,6 +105,7 @@ export default function App() {
                 <DialogContent className="w-[320px]">
                   <DialogHeader>
                     <DialogTitle>About BeatSketch</DialogTitle>
+                    <DialogDescription>Quick overview of the extension and author link.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3 text-sm text-violet-800">
                     <p>BeatSketch is a lightweight browser drum machine for guitarists and bassists, with dual pattern A/B playback, quick genre templates, per-step editing, tap tempo, and Web Audio-based reverb.</p>
