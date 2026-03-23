@@ -95,7 +95,16 @@ export class AudioEngine {
     const state = useBeatStore.getState();
     const secondsPerBeat = 60 / state.bpm;
     const stepDuration = secondsPerBeat / 4;
-    this.stepIndex = (this.stepIndex + 1) % state.steps;
+    const nextStep = (this.stepIndex + 1) % state.steps;
+    if (nextStep === 0 && state.queuedPattern) {
+      useBeatStore.getState().commitQueuedPatternChange();
+      const refreshed = useBeatStore.getState();
+      this.stepIndex = 0;
+      this.nextNoteTime += stepDuration;
+      window.setTimeout(() => refreshed.setCurrentStep(0), 0);
+      return;
+    }
+    this.stepIndex = nextStep;
     this.nextNoteTime += stepDuration;
     window.setTimeout(() => useBeatStore.getState().setCurrentStep(this.stepIndex), 0);
   }
@@ -127,7 +136,13 @@ export class AudioEngine {
     if (track.reverbAvailable && track.reverbType !== "none") {
       const chain = this.reverbEngine.getOrCreateChain(track.id, track.reverbType);
       if (chain) {
-        this.reverbEngine.setMix(track.id, track.reverbType, track.reverb, useBeatStore.getState().reverbMasterEnabled);
+        this.reverbEngine.setMix(
+          track.id,
+          track.reverbType,
+          track.reverb,
+          useBeatStore.getState().reverbMasterEnabled,
+          useBeatStore.getState().reverbMasterAmount
+        );
         this.reverbEngine.connect(chain, this.filter);
         sourceChain.output.connect(amp);
         amp.connect(chain.input);

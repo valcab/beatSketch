@@ -11,14 +11,14 @@ export default {
       },
       colors: {
         pedal: {
-          bg: "#09090b",
-          panel: "#111114",
-          edge: "#25252b",
-          glow: "#f97316"
+          bg: "#f8f5ff",
+          panel: "#ffffff",
+          edge: "#d9d0ef",
+          glow: "#8b5cf6"
         }
       },
       boxShadow: {
-        pedal: "0 0 0 1px rgba(255,255,255,0.05), 0 14px 40px rgba(0,0,0,0.45)"
+        pedal: "0 0 0 1px rgba(91,33,182,0.08), 0 18px 40px rgba(91,33,182,0.12)"
       },
       keyframes: {
         pulsebar: {

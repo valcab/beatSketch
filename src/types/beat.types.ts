@@ -57,7 +57,9 @@ export interface BeatState {
   pattern: Pattern;
   patterns: Pattern[];
   activePattern: PatternSlot;
+  queuedPattern: PatternSlot | null;
   reverbMasterEnabled: boolean;
+  reverbMasterAmount: number;
   selectedTrackId: string;
   audioReady: boolean;
   fallbackMode: boolean;

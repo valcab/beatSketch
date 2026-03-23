@@ -10,7 +10,7 @@ export function Sequencer() {
     selectedTrackId,
     setSteps,
     setSelectedTrackId,
-    toggleStep,
+    setStepActive,
     setVelocity,
     toggleMute,
     toggleSolo
@@ -18,9 +18,9 @@ export function Sequencer() {
 
   return (
     <div className="space-y-2">
-      <div className="sticky top-0 z-10 rounded-xl border border-zinc-900 bg-black/80 p-2 backdrop-blur">
+      <div className="sticky top-0 z-10 rounded-xl border border-violet-200 bg-white/90 p-2 backdrop-blur">
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">Sequencer Grid</div>
+          <div className="text-[10px] uppercase tracking-[0.24em] text-violet-500">Sequencer Grid</div>
           <div className="flex items-center gap-1">
             {[8, 16, 32].map((count) => (
               <Button
@@ -35,11 +35,11 @@ export function Sequencer() {
           </div>
         </div>
         <div className="grid gap-x-2 gap-y-1" style={{ gridTemplateColumns: `92px repeat(${steps}, minmax(0, 1fr))` }}>
-          <div className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">Track</div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-violet-400">Track</div>
           {Array.from({ length: steps }, (_, index) => (
             <div
               key={index}
-              className={`text-center text-[10px] font-mono ${index % Math.max(1, steps / 4) === 0 ? "text-zinc-200" : "text-zinc-600"}`}
+              className={`text-center text-[10px] font-mono ${index % Math.max(1, steps / 4) === 0 ? "text-violet-800" : "text-violet-400"}`}
             >
               {index + 1}
             </div>
@@ -54,7 +54,7 @@ export function Sequencer() {
           steps={steps}
           selected={track.id === selectedTrackId}
           onSelect={() => setSelectedTrackId(track.id)}
-          onToggleStep={(index) => toggleStep(track.id, index)}
+          onSetStepActive={(index, active) => setStepActive(track.id, index, active)}
           onSetVelocity={(index, velocity) => setVelocity(track.id, index, velocity)}
           onMute={() => toggleMute(track.id)}
           onSolo={() => toggleSolo(track.id)}

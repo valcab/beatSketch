@@ -69,6 +69,7 @@ interface BeatStore extends BeatState {
   setFallbackMode: (value: boolean) => void;
   setSelectedTrackId: (trackId: string) => void;
   toggleStep: (trackId: string, index: number) => void;
+  setStepActive: (trackId: string, index: number, active: boolean) => void;
   setVelocity: (trackId: string, index: number, velocity: number) => void;
   toggleMute: (trackId: string) => void;
   toggleSolo: (trackId: string) => void;
@@ -76,9 +77,12 @@ interface BeatStore extends BeatState {
   setTrackReverb: (trackId: string, value: number) => void;
   setTrackReverbType: (trackId: string, reverbType: ReverbType) => void;
   setActivePattern: (pattern: PatternSlot) => void;
+  queuePatternChange: (pattern: PatternSlot | null) => void;
+  commitQueuedPatternChange: () => void;
   copyPattern: (from: PatternSlot, to: PatternSlot) => void;
   applyPresetToPattern: (pattern: PatternSlot, presetName: string) => void;
   setReverbMasterEnabled: (value: boolean) => void;
+  setReverbMasterAmount: (value: number) => void;
   applyPresetTracks: (steps: StepCount, tracks: DrumTrack[]) => void;
   loadSavedBeat: (beat: SavedBeat) => void;
 }
@@ -109,7 +113,9 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
   masterVolume: 0.82,
   kit: KITS[0],
   activePattern: initialActivePattern,
+  queuedPattern: null,
   reverbMasterEnabled: true,
+  reverbMasterAmount: 100,
   selectedTrackId: TRACK_DEFS[0].id,
   audioReady: false,
   fallbackMode: false,
@@ -147,6 +153,20 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
               ...track,
               steps: track.steps.map((value, stepIndex) => (stepIndex === index ? !value : value)),
               velocity: track.velocity.map((value, stepIndex) => (stepIndex === index && !track.steps[index] ? 0.8 : value))
+            }
+          : track
+      );
+      const patterns = updatePatterns(state.patterns, state.activePattern, tracks);
+      return { tracks, patterns, pattern: { ...state.pattern, tracks } };
+    }),
+  setStepActive: (trackId, index, active) =>
+    set((state) => {
+      const tracks = state.tracks.map((track) =>
+        track.id === trackId
+          ? {
+              ...track,
+              steps: track.steps.map((value, stepIndex) => (stepIndex === index ? active : value)),
+              velocity: track.velocity.map((value, stepIndex) => (stepIndex === index && active && !track.steps[index] ? 0.8 : value))
             }
           : track
       );
@@ -192,7 +212,24 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
       const tracks = state.tracks.map((track) => (track.id === trackId ? { ...track, reverbType } : track));
       return { tracks, patterns: updatePatterns(state.patterns, state.activePattern, tracks), pattern: { ...state.pattern, tracks } };
     }),
-  setActivePattern: (activePattern) => set((state) => ({ activePattern, currentStep: 0, ...syncPatternTracks(state.patterns, activePattern) })),
+  setActivePattern: (activePattern) =>
+    set((state) => ({
+      activePattern,
+      queuedPattern: null,
+      currentStep: 0,
+      ...syncPatternTracks(state.patterns, activePattern)
+    })),
+  queuePatternChange: (queuedPattern) => set({ queuedPattern }),
+  commitQueuedPatternChange: () =>
+    set((state) => {
+      if (!state.queuedPattern) return state;
+      return {
+        queuedPattern: null,
+        currentStep: 0,
+        activePattern: state.queuedPattern,
+        ...syncPatternTracks(state.patterns, state.queuedPattern)
+      };
+    }),
   copyPattern: (from, to) =>
     set((state) => {
       const fromPattern = state.patterns.find((pattern) => pattern.id === from);
@@ -230,6 +267,7 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
       };
     }),
   setReverbMasterEnabled: (reverbMasterEnabled) => set({ reverbMasterEnabled }),
+  setReverbMasterAmount: (reverbMasterAmount) => set({ reverbMasterAmount: Math.min(100, Math.max(0, Math.round(reverbMasterAmount))) }),
   applyPresetTracks: (steps, tracks) =>
     set((state) => {
       const patterns = updatePatterns(state.patterns, state.activePattern, tracks);
@@ -251,6 +289,7 @@ export const useBeatStore = create<BeatStore>((set, get) => ({
         tracks: clonePattern(active).tracks,
         pattern: clonePattern(active),
         activePattern,
+        queuedPattern: null,
         currentStep: 0,
         patterns,
         kit: KITS.find((kit) => kit.name === beat.kit) ?? KITS[0]

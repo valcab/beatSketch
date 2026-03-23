@@ -51,10 +51,10 @@ export class ReverbEngine {
     chain.connected = true;
   }
 
-  setMix(trackId: string, type: ReverbType, amount: number, masterEnabled: boolean) {
+  setMix(trackId: string, type: ReverbType, amount: number, masterEnabled: boolean, masterAmount = 100) {
     const chain = this.getOrCreateChain(trackId, type);
     if (!chain) return;
-    const wetValue = masterEnabled ? Math.max(0, Math.min(1, amount / 100)) : 0;
+    const wetValue = masterEnabled ? Math.max(0, Math.min(1, (amount / 100) * (masterAmount / 100))) : 0;
     chain.convolver.buffer = this.getImpulse(type);
     chain.wet.gain.value = wetValue;
     chain.dry.gain.value = 1 - Math.min(0.92, wetValue);
